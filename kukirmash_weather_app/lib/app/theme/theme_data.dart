@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'theme_colors.dart';
 
 class AppTheme {
@@ -12,9 +13,7 @@ class AppTheme {
   }
 }
 
-final _colorScheme = ColorScheme.fromSeed(
-  seedColor: ThemeColors.accent,
-);
+final _colorScheme = ColorScheme.fromSeed(seedColor: ThemeColors.accent);
 
 final _appBarTheme = const AppBarTheme(
   toolbarHeight: 50,

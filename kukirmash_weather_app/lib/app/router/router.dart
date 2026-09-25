@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+
 import '../../di/di.dart';
 import '../features/features.dart';
 
@@ -14,10 +15,8 @@ final router = GoRouter(
   routes: [
     GoRoute(
       path: '/home',
-      pageBuilder: (_, state) => MaterialPage(
-        key: state.pageKey,
-        child: const HomeScreen(),
-      ),
+      pageBuilder: (_, state) =>
+          MaterialPage(key: state.pageKey, child: const HomeScreen()),
     ),
   ],
 );
