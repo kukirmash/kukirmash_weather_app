@@ -30,13 +30,17 @@ class DailyWeather {
 class WeatherCard extends StatelessWidget {
   final DailyWeather weather;
 
-  const WeatherCard({super.key, required this.weather});
+  /// Обработчик нажатия на карточку (переход на экран деталей).
+  final VoidCallback? onTap;
+
+  const WeatherCard({super.key, required this.weather, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     const imageSize = 120.0;
 
     return InkWell(
+      onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
         height: imageSize,

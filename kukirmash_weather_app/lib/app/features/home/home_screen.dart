@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../widgets/widgets.dart';
 import '../../extensions/extensions.dart';
@@ -111,9 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
               primary: false,
               shrinkWrap: true,
               itemCount: weekForecast.length,
-              itemBuilder: (_, index) =>
-                  WeatherCard(weather: weekForecast[index]),
-              separatorBuilder: (_, __) => 16.ph,
+              itemBuilder: (_, index) => WeatherCard(
+                weather: weekForecast[index],
+                onTap: () => context.push('/details', extra: weekForecast[index]),
+              ),
+              separatorBuilder: (_, _) => 16.ph,
             ),
           ],
         ),
