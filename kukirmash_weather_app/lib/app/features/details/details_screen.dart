@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/data.dart';
 import '../../../di/di.dart';
 import '../../extensions/extensions.dart';
+import '../../features/favorites/favorites.dart';
 import '../../widgets/widgets.dart';
 import 'bloc/details_bloc.dart';
 import 'widgets/hourly_forecast_tile.dart';
@@ -26,19 +27,27 @@ class DetailsScreen extends StatefulWidget {
 
 class _DetailsScreenState extends State<DetailsScreen> {
   final _details = getIt<DetailsBloc>();
+  final _favorites = getIt<FavoritesBloc>();
 
   void loadDetails() => _details.add(DetailsLoad(id: widget.id));
 
   @override
   void initState() {
     loadDetails();
+    // Подписка на избранное нужна, чтобы показать состояние закладки.
+    if (_favorites.state is FavoritesInitial) {
+      _favorites.add(const FavoritesStarted());
+    }
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Подробнее')),
+      appBar: AppBar(
+        title: const Text('Подробнее'),
+        actions: [_buildFavoriteAction()],
+      ),
       body: BlocBuilder<DetailsBloc, DetailsState>(
         bloc: _details,
         builder: (context, state) {
@@ -50,6 +59,41 @@ class _DetailsScreenState extends State<DetailsScreen> {
           };
         },
       ),
+    );
+  }
+
+  /// Кнопка добавления дня в избранное (Cloud Firestore).
+  Widget _buildFavoriteAction() {
+    return BlocBuilder<FavoritesBloc, FavoritesState>(
+      bloc: _favorites,
+      builder: (context, state) {
+        final favorites = state is FavoritesLoadSuccess
+            ? state.favorites
+            : const <FavoriteDay>[];
+        final favorite = favorites.any((day) => day.id == widget.id);
+
+        return IconButton(
+          tooltip: favorite
+              ? 'Удалить из избранного'
+              : 'Добавить в избранное',
+          icon: Icon(
+            favorite ? Icons.bookmark : Icons.bookmark_border,
+          ),
+          onPressed: favorite
+              ? () => _favorites.add(
+                  FavoriteRemoveRequested(id: widget.id),
+                )
+              : () {
+                  final detailsState = _details.state;
+                  if (detailsState is! DetailsLoadSuccess) return;
+                  _favorites.add(
+                    FavoriteAddRequested(
+                      forecast: detailsState.details.summary,
+                    ),
+                  );
+                },
+        );
+      },
     );
   }
 

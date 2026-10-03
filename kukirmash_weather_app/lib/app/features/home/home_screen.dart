@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../di/di.dart';
 import '../../extensions/extensions.dart';
+import '../../features/auth/auth.dart';
 import '../../widgets/widgets.dart';
 import 'bloc/home_bloc.dart';
 
@@ -31,7 +32,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Погода')),
+      appBar: AppBar(
+        title: const Text('Погода'),
+        actions: [
+          IconButton(
+            tooltip: 'Избранное',
+            icon: const Icon(Icons.bookmarks_outlined),
+            onPressed: () => context.push('/favorites'),
+          ),
+          IconButton(
+            tooltip: 'Выйти',
+            icon: const Icon(Icons.logout),
+            onPressed: () =>
+                getIt<AuthBloc>().add(const AuthSignOutRequested()),
+          ),
+        ],
+      ),
       body: BlocBuilder<HomeBloc, HomeState>(
         bloc: _home,
         builder: (context, state) {
