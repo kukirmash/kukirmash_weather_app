@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
-import '../../data/data.dart';
 import '../../di/di.dart';
 import '../features/features.dart';
 
@@ -19,12 +18,12 @@ final router = GoRouter(
       pageBuilder: (_, state) =>
           MaterialPage(key: state.pageKey, child: const HomeScreen()),
     ),
-    // Второй экран приложения. Выбранный день передаётся через extra.
+    // Второй экран приложения. Идентификатор дня передаётся в адресе.
     GoRoute(
-      path: '/details',
+      path: '/details/:id',
       pageBuilder: (_, state) => MaterialPage(
         key: state.pageKey,
-        child: DetailsScreen(forecast: state.extra! as DailyForecast),
+        child: DetailsScreen(id: state.pathParameters['id']!),
       ),
     ),
   ],

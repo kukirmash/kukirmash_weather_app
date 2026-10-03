@@ -23,4 +23,7 @@ Future<void> setupLocator() async {
 
   // Блоки экранов.
   getIt.registerSingleton(HomeBloc(getIt.get<ForecastRepositoryInterface>()));
+  getIt.registerSingleton(
+    DetailsBloc(getIt.get<ForecastRepositoryInterface>()),
+  );
 }

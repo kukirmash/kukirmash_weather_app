@@ -11,10 +11,13 @@ ForecastResponse _$ForecastResponseFromJson(Map<String, dynamic> json) =>
       daily: json['daily'] == null
           ? null
           : DailyBlock.fromJson(json['daily'] as Map<String, dynamic>),
+      hourly: json['hourly'] == null
+          ? null
+          : HourlyBlock.fromJson(json['hourly'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$ForecastResponseToJson(ForecastResponse instance) =>
-    <String, dynamic>{'daily': instance.daily};
+    <String, dynamic>{'daily': instance.daily, 'hourly': instance.hourly};
 
 DailyBlock _$DailyBlockFromJson(Map<String, dynamic> json) => DailyBlock(
   time: (json['time'] as List<dynamic>).map((e) => e as String).toList(),
@@ -68,4 +71,41 @@ Map<String, dynamic> _$DailyBlockToJson(DailyBlock instance) =>
       'sunrise': instance.sunrise,
       'sunset': instance.sunset,
       'uv_index_max': instance.uvIndex,
+    };
+
+HourlyBlock _$HourlyBlockFromJson(Map<String, dynamic> json) => HourlyBlock(
+  time: (json['time'] as List<dynamic>).map((e) => e as String).toList(),
+  temperature: (json['temperature_2m'] as List<dynamic>)
+      .map((e) => e as num)
+      .toList(),
+  relativeHumidity: (json['relative_humidity_2m'] as List<dynamic>)
+      .map((e) => (e as num).toInt())
+      .toList(),
+  apparentTemperature: (json['apparent_temperature'] as List<dynamic>)
+      .map((e) => e as num)
+      .toList(),
+  precipitationProbability: (json['precipitation_probability'] as List<dynamic>)
+      .map((e) => (e as num).toInt())
+      .toList(),
+  weatherCode: (json['weather_code'] as List<dynamic>)
+      .map((e) => (e as num).toInt())
+      .toList(),
+  windSpeed: (json['wind_speed_10m'] as List<dynamic>)
+      .map((e) => e as num)
+      .toList(),
+  surfacePressure: (json['surface_pressure'] as List<dynamic>)
+      .map((e) => e as num)
+      .toList(),
+);
+
+Map<String, dynamic> _$HourlyBlockToJson(HourlyBlock instance) =>
+    <String, dynamic>{
+      'time': instance.time,
+      'temperature_2m': instance.temperature,
+      'relative_humidity_2m': instance.relativeHumidity,
+      'apparent_temperature': instance.apparentTemperature,
+      'precipitation_probability': instance.precipitationProbability,
+      'weather_code': instance.weatherCode,
+      'wind_speed_10m': instance.windSpeed,
+      'surface_pressure': instance.surfacePressure,
     };

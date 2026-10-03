@@ -1,21 +1,70 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/data.dart';
+import '../../../di/di.dart';
+import '../../extensions/extensions.dart';
+import '../../widgets/widgets.dart';
+import 'bloc/details_bloc.dart';
+import 'widgets/hourly_forecast_tile.dart';
+import 'widgets/metric_tile.dart';
 
 /// Второй экран приложения (DetailsScreen).
 ///
-/// Отображает детальную информацию о выбранном дне прогноза.
-class DetailsScreen extends StatelessWidget {
-  const DetailsScreen({super.key, required this.forecast});
+/// Получает идентификатор дня и запрашивает по нему подробные данные.
+class DetailsScreen extends StatefulWidget {
+  const DetailsScreen({super.key, required this.id});
 
-  /// Выбранный день прогноза, по которому строится детальный экран.
-  final DailyForecast forecast;
+  /// Идентификатор дня — дата в формате ISO.
+  final String id;
+
+  @override
+  State<DetailsScreen> createState() => _DetailsScreenState();
+}
+
+class _DetailsScreenState extends State<DetailsScreen> {
+  final _details = getIt<DetailsBloc>();
+
+  void loadDetails() => _details.add(DetailsLoad(id: widget.id));
+
+  @override
+  void initState() {
+    loadDetails();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Подробнее')),
-      body: SingleChildScrollView(
+      body: BlocBuilder<DetailsBloc, DetailsState>(
+        bloc: _details,
+        builder: (context, state) {
+          return switch (state) {
+            DetailsInitial() => const SizedBox.shrink(),
+            DetailsLoadInProgress() => const AppProgressIndicator(),
+            DetailsLoadSuccess() => _buildLoadSuccess(state),
+            DetailsLoadFailure() => _buildLoadFailure(state),
+          };
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoadSuccess(DetailsLoadSuccess state) {
+    final summary = state.details.summary;
+    final hourly = state.details.hourly;
+
+    return RefreshIndicator(
+      onRefresh: () {
+        final completer = Completer();
+        _details.add(DetailsLoad(id: widget.id, completer: completer));
+        return completer.future;
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           spacing: 20,
@@ -25,30 +74,49 @@ class DetailsScreen extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.asset(
-                forecast.imagePath,
-                height: 200,
+                summary.imagePath,
+                height: 180,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  height: 200,
+                  height: 180,
                   color: Colors.grey[300],
                   child: const Icon(Icons.cloud, size: 80),
                 ),
               ),
             ),
             // Заголовок с датой и кратким описанием состояния.
-            Text(
-              forecast.formattedDate,
-              style: Theme.of(context).textTheme.headlineSmall,
+            Column(
+              spacing: 4,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  summary.formattedDate,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                Text(
+                  summary.conditionText,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
             ),
+            _buildMetrics(summary),
+            // Подробное текстовое описание дня.
             Text(
-              forecast.conditionText,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            // Подробное описание: все показатели выбранного дня.
-            Text(
-              _description,
+              _description(summary),
               style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            Text(
+              'Почасовой прогноз',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            ListView.separated(
+              primary: false,
+              shrinkWrap: true,
+              itemCount: hourly.length,
+              itemBuilder: (_, index) =>
+                  HourlyForecastTile(forecast: hourly[index]),
+              separatorBuilder: (_, _) => 12.ph,
             ),
           ],
         ),
@@ -56,27 +124,110 @@ class DetailsScreen extends StatelessWidget {
     );
   }
 
+  /// Сетка показателей выбранного дня (по две плитки в ряд).
+  Widget _buildMetrics(DailyForecast summary) {
+    final metrics = <({IconData icon, String label, String value})>[
+      (
+        icon: Icons.thermostat,
+        label: 'Днём',
+        value: '${summary.temperatureMax.round()}°C',
+      ),
+      (
+        icon: Icons.nightlight_round,
+        label: 'Ночью',
+        value: '${summary.temperatureMin.round()}°C',
+      ),
+      (
+        icon: Icons.device_thermostat,
+        label: 'Ощущается',
+        value: '${summary.apparentTemperatureMax.round()}°C',
+      ),
+      (
+        icon: Icons.water_drop_outlined,
+        label: 'Влажность',
+        value: '${summary.relativeHumidity}%',
+      ),
+      (
+        icon: Icons.speed,
+        label: 'Давление',
+        value: '${summary.pressureMmHg.round()} мм',
+      ),
+      (
+        icon: Icons.air,
+        label: 'Ветер',
+        value: '${summary.windSpeed.round()} км/ч',
+      ),
+      (
+        icon: Icons.grain,
+        label: 'Осадки',
+        value: '${summary.precipitationProbability}%',
+      ),
+      (
+        icon: Icons.wb_sunny_outlined,
+        label: 'УФ-индекс',
+        value: summary.uvIndex.toStringAsFixed(1),
+      ),
+      (
+        icon: Icons.wb_twilight,
+        label: 'Восход',
+        value: summary.formattedSunrise,
+      ),
+      (
+        icon: Icons.nights_stay_outlined,
+        label: 'Закат',
+        value: summary.formattedSunset,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tileWidth = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final metric in metrics)
+              SizedBox(
+                width: tileWidth,
+                child: MetricTile(
+                  icon: metric.icon,
+                  label: metric.label,
+                  value: metric.value,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadFailure(DetailsLoadFailure state) {
+    return AppError(
+      description: state.exception.toString(),
+      onTap: loadDetails,
+    );
+  }
+
   /// Текст подробного описания дня, собираемый из полей модели.
-  String get _description =>
+  String _description(DailyForecast summary) =>
       'Температура воздуха днём поднимается до '
-      '${forecast.temperatureMax.round()}°C и опускается ночью до '
-      '${forecast.temperatureMin.round()}°C. С учётом скорости ветра и '
+      '${summary.temperatureMax.round()}°C и опускается ночью до '
+      '${summary.temperatureMin.round()}°C. С учётом скорости ветра и '
       'влажности температура ощущается как '
-      '${forecast.apparentTemperatureMax.round()}°C.\n\n'
-      'Ожидается: ${forecast.conditionText.toLowerCase()}.\n\n'
-      'Относительная влажность воздуха составит около '
-      '${forecast.relativeHumidity}%. Атмосферное давление — '
-      '${forecast.pressureMmHg.round()} мм рт. ст. Скорость ветра — до '
-      '${forecast.windSpeed.round()} км/ч. Вероятность осадков — '
-      '${forecast.precipitationProbability}%.\n\n'
-      'Восход: ${forecast.formattedSunrise}, закат: '
-      '${forecast.formattedSunset}. УФ-индекс: '
-      '${forecast.uvIndex.toStringAsFixed(1)}.\n\n'
-      'Рекомендации: $_recommendation';
+      '${summary.apparentTemperatureMax.round()}°C.\n\n'
+      'Ожидается: ${summary.conditionText.toLowerCase()}. '
+      'Вероятность осадков — ${summary.precipitationProbability}%, '
+      'скорость ветра — до ${summary.windSpeed.round()} км/ч, '
+      'влажность воздуха — около ${summary.relativeHumidity}%.\n\n'
+      'Атмосферное давление составит ${summary.pressureMmHg.round()} мм рт. ст. '
+      'Продолжительность светового дня: с ${summary.formattedSunrise} '
+      'до ${summary.formattedSunset}, максимальный УФ-индекс — '
+      '${summary.uvIndex.toStringAsFixed(1)}.\n\n'
+      'Рекомендации: ${_recommendation(summary)}';
 
   /// Подбор рекомендации по состоянию погоды.
-  String get _recommendation {
-    switch (forecast.condition) {
+  String _recommendation(DailyForecast summary) {
+    switch (summary.condition) {
       case WeatherCondition.clear:
       case WeatherCondition.mainlyClear:
         return 'погода располагает к длительной прогулке, не забудьте '

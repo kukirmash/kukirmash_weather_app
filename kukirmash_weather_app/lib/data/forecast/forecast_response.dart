@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'daily_forecast.dart';
+import 'hourly_forecast.dart';
 
 part 'forecast_response.g.dart';
 
@@ -11,11 +12,15 @@ part 'forecast_response.g.dart';
 /// Класс разбирает такой ответ и склеивает колонки в список моделей.
 @JsonSerializable()
 class ForecastResponse {
-  const ForecastResponse({this.daily});
+  const ForecastResponse({this.daily, this.hourly});
 
   /// Блок суточного прогноза.
   @JsonKey(name: 'daily')
   final DailyBlock? daily;
+
+  /// Блок почасового прогноза.
+  @JsonKey(name: 'hourly')
+  final HourlyBlock? hourly;
 
   factory ForecastResponse.fromJson(Map<String, dynamic> json) =>
       _$ForecastResponseFromJson(json);
@@ -43,6 +48,25 @@ class ForecastResponse {
         sunrise: DateTime.parse(block.sunrise[index]),
         sunset: DateTime.parse(block.sunset[index]),
         uvIndex: block.uvIndex[index].toDouble(),
+      );
+    });
+  }
+
+  /// Склеивает параллельные массивы блока hourly в список моделей.
+  List<HourlyForecast> toHourlyForecasts() {
+    final block = hourly;
+    if (block == null) return const [];
+
+    return List.generate(block.time.length, (index) {
+      return HourlyForecast(
+        time: DateTime.parse(block.time[index]),
+        temperature: block.temperature[index].toDouble(),
+        relativeHumidity: block.relativeHumidity[index],
+        apparentTemperature: block.apparentTemperature[index].toDouble(),
+        precipitationProbability: block.precipitationProbability[index],
+        weatherCode: block.weatherCode[index],
+        windSpeed: block.windSpeed[index].toDouble(),
+        surfacePressure: block.surfacePressure[index].toDouble(),
       );
     });
   }
@@ -107,4 +131,48 @@ class DailyBlock {
       _$DailyBlockFromJson(json);
 
   Map<String, dynamic> toJson() => _$DailyBlockToJson(this);
+}
+
+/// Блок почасовых показателей ответа Open-Meteo (параллельные массивы).
+@JsonSerializable()
+class HourlyBlock {
+  const HourlyBlock({
+    required this.time,
+    required this.temperature,
+    required this.relativeHumidity,
+    required this.apparentTemperature,
+    required this.precipitationProbability,
+    required this.weatherCode,
+    required this.windSpeed,
+    required this.surfacePressure,
+  });
+
+  /// Дата и время измерения в формате ISO8601.
+  final List<String> time;
+
+  @JsonKey(name: 'temperature_2m')
+  final List<num> temperature;
+
+  @JsonKey(name: 'relative_humidity_2m')
+  final List<int> relativeHumidity;
+
+  @JsonKey(name: 'apparent_temperature')
+  final List<num> apparentTemperature;
+
+  @JsonKey(name: 'precipitation_probability')
+  final List<int> precipitationProbability;
+
+  @JsonKey(name: 'weather_code')
+  final List<int> weatherCode;
+
+  @JsonKey(name: 'wind_speed_10m')
+  final List<num> windSpeed;
+
+  @JsonKey(name: 'surface_pressure')
+  final List<num> surfacePressure;
+
+  factory HourlyBlock.fromJson(Map<String, dynamic> json) =>
+      _$HourlyBlockFromJson(json);
+
+  Map<String, dynamic> toJson() => _$HourlyBlockToJson(this);
 }

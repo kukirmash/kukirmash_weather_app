@@ -84,8 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: forecast.length,
               itemBuilder: (_, index) => WeatherCard(
                 forecast: forecast[index],
-                onTap: () =>
-                    context.push('/details', extra: forecast[index]),
+                onTap: () => context.push('/details/${forecast[index].id}'),
               ),
               separatorBuilder: (_, _) => 16.ph,
             ),

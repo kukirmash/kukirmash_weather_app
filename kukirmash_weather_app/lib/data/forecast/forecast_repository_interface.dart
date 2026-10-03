@@ -1,4 +1,5 @@
 import 'daily_forecast.dart';
+import 'day_details.dart';
 
 /// Интерфейс репозитория прогноза погоды.
 ///
@@ -7,4 +8,7 @@ import 'daily_forecast.dart';
 abstract interface class ForecastRepositoryInterface {
   /// Первый запрос — список элементов: прогноз на несколько дней вперёд.
   Future<List<DailyForecast>> getWeekForecast();
+
+  /// Второй запрос — отдельный элемент по [id]: подробности одного дня.
+  Future<DayDetails> getDayDetails(String id);
 }

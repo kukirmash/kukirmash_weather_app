@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../endpoints.dart';
 import 'daily_forecast.dart';
+import 'day_details.dart';
 import 'forecast_repository_interface.dart';
 import 'forecast_response.dart';
 
@@ -27,6 +28,17 @@ class ForecastRepository implements ForecastRepositoryInterface {
     'uv_index_max',
   ].join(',');
 
+  /// Запрашиваемые почасовые показатели.
+  static final String _hourlyParameters = [
+    'temperature_2m',
+    'relative_humidity_2m',
+    'apparent_temperature',
+    'precipitation_probability',
+    'weather_code',
+    'wind_speed_10m',
+    'surface_pressure',
+  ].join(',');
+
   @override
   Future<List<DailyForecast>> getWeekForecast() async {
     try {
@@ -42,6 +54,35 @@ class ForecastRepository implements ForecastRepositoryInterface {
     } on DioException catch (e) {
       throw ForecastException(
         e.message ?? 'Не удалось загрузить прогноз погоды',
+      );
+    }
+  }
+
+  @override
+  Future<DayDetails> getDayDetails(String id) async {
+    try {
+      // Ограничиваем запрос одним днём — это и есть запрос элемента по id.
+      final response = await dio.get<Map<String, dynamic>>(
+        Endpoints.forecast,
+        queryParameters: {
+          'daily': _dailyParameters,
+          'hourly': _hourlyParameters,
+          'start_date': id,
+          'end_date': id,
+        },
+      );
+      final data = ForecastResponse.fromJson(response.data!);
+      final daily = data.toDailyForecasts();
+      if (daily.isEmpty) {
+        throw const ForecastException('Нет данных за выбранный день');
+      }
+      return DayDetails(
+        summary: daily.first,
+        hourly: data.toHourlyForecasts(),
+      );
+    } on DioException catch (e) {
+      throw ForecastException(
+        e.message ?? 'Не удалось загрузить подробный прогноз',
       );
     }
   }
