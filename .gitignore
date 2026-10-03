@@ -10,6 +10,9 @@
 .svn/
 *~
 
+# Вспомогательные инструменты разработки (генерация отчётов, скриншоты)
+.tools/
+
 # IDEs (VS Code, Android Studio, IntelliJ)
 *.iml
 .idea/
