@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
+import '../../data/data.dart';
 import '../../di/di.dart';
 import '../features/features.dart';
-import '../widgets/widgets.dart';
 
 final _rootNavigationKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -24,7 +24,7 @@ final router = GoRouter(
       path: '/details',
       pageBuilder: (_, state) => MaterialPage(
         key: state.pageKey,
-        child: DetailsScreen(weather: state.extra! as DailyWeather),
+        child: DetailsScreen(forecast: state.extra! as DailyForecast),
       ),
     ),
   ],

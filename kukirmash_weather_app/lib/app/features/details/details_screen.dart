@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/widgets.dart';
+import '../../../data/data.dart';
 
 /// Второй экран приложения (DetailsScreen).
 ///
 /// Отображает детальную информацию о выбранном дне прогноза.
-/// Данные приходят из первого экрана через параметр [weather].
 class DetailsScreen extends StatelessWidget {
-  const DetailsScreen({super.key, required this.weather});
+  const DetailsScreen({super.key, required this.forecast});
 
   /// Выбранный день прогноза, по которому строится детальный экран.
-  final DailyWeather weather;
+  final DailyForecast forecast;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +25,7 @@ class DetailsScreen extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.asset(
-                weather.imagePath,
+                forecast.imagePath,
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -39,11 +38,11 @@ class DetailsScreen extends StatelessWidget {
             ),
             // Заголовок с датой и кратким описанием состояния.
             Text(
-              weather.date,
+              forecast.formattedDate,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             Text(
-              weather.condition,
+              forecast.conditionText,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             // Подробное описание: все показатели выбранного дня.
@@ -59,25 +58,44 @@ class DetailsScreen extends StatelessWidget {
 
   /// Текст подробного описания дня, собираемый из полей модели.
   String get _description =>
-      'Температура воздуха в течение дня меняется с ${weather.tempMorning}°C '
-      'утром до ${weather.tempDay}°C днём и опускается до '
-      '${weather.tempEvening}°C вечером. С учётом скорости ветра и влажности '
-      'температура ощущается как ${weather.tempFeelsLike}°C.\n\n'
-      'Ожидается: ${weather.condition.toLowerCase()}.\n\n'
-      'Относительная влажность воздуха составит около ${weather.humidity}%. '
-      'Атмосферное давление — ${weather.pressure} мм рт. ст.\n\n'
+      'Температура воздуха днём поднимается до '
+      '${forecast.temperatureMax.round()}°C и опускается ночью до '
+      '${forecast.temperatureMin.round()}°C. С учётом скорости ветра и '
+      'влажности температура ощущается как '
+      '${forecast.apparentTemperatureMax.round()}°C.\n\n'
+      'Ожидается: ${forecast.conditionText.toLowerCase()}.\n\n'
+      'Относительная влажность воздуха составит около '
+      '${forecast.relativeHumidity}%. Атмосферное давление — '
+      '${forecast.pressureMmHg.round()} мм рт. ст. Скорость ветра — до '
+      '${forecast.windSpeed.round()} км/ч. Вероятность осадков — '
+      '${forecast.precipitationProbability}%.\n\n'
+      'Восход: ${forecast.formattedSunrise}, закат: '
+      '${forecast.formattedSunset}. УФ-индекс: '
+      '${forecast.uvIndex.toStringAsFixed(1)}.\n\n'
       'Рекомендации: $_recommendation';
 
   /// Подбор рекомендации по состоянию погоды.
   String get _recommendation {
-    switch (weather.condition.toLowerCase()) {
-      case 'ясно':
-        return 'погода располагает к длительной прогулке, не забудьте головной убор.';
-      case 'кратковременный дождь':
-      case 'дождь':
-        return 'возьмите с собой зонт, возможны кратковременные осадки.';
-      case 'сильная гроза':
+    switch (forecast.condition) {
+      case WeatherCondition.clear:
+      case WeatherCondition.mainlyClear:
+        return 'погода располагает к длительной прогулке, не забудьте '
+            'головной убор.';
+      case WeatherCondition.lightRain:
+      case WeatherCondition.rain:
+      case WeatherCondition.heavyRain:
+      case WeatherCondition.drizzle:
+      case WeatherCondition.showers:
+        return 'возьмите с собой зонт, возможны осадки.';
+      case WeatherCondition.thunderstorm:
+      case WeatherCondition.thunderstormHail:
         return 'лучше остаться в помещении, возможны порывы ветра и грозы.';
+      case WeatherCondition.snow:
+      case WeatherCondition.lightSnow:
+      case WeatherCondition.heavySnow:
+      case WeatherCondition.snowShowers:
+      case WeatherCondition.snowGrains:
+        return 'на улице скользко, выбирайте тёплую и нескользящую обувь.';
       default:
         return 'одевайтесь по погоде, день обещает быть прохладным.';
     }

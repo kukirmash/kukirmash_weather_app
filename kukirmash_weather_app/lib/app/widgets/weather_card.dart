@@ -1,39 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Модель данных DailyWeather.
-/// Добавлено поле imagePath для привязки конкретного изображения к состоянию погоды.
-class DailyWeather {
-  final String date;
-  final String condition;
-  final String imagePath;
-  final int tempMorning;
-  final int tempDay;
-  final int tempEvening;
-  final int tempFeelsLike;
-  final int humidity;
-  final int pressure;
+import '../../data/data.dart';
 
-  DailyWeather({
-    required this.date,
-    required this.condition,
-    required this.imagePath,
-    required this.tempMorning,
-    required this.tempDay,
-    required this.tempEvening,
-    required this.tempFeelsLike,
-    required this.humidity,
-    required this.pressure,
-  });
-}
-
-/// Пользовательский виджет WeatherCard.
+/// Пользовательский виджет WeatherCard — карточка одного дня прогноза.
 class WeatherCard extends StatelessWidget {
-  final DailyWeather weather;
+  const WeatherCard({super.key, required this.forecast, this.onTap});
+
+  /// Данные дня прогноза, отображаемые в карточке.
+  final DailyForecast forecast;
 
   /// Обработчик нажатия на карточку (переход на экран деталей).
   final VoidCallback? onTap;
-
-  const WeatherCard({super.key, required this.weather, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +25,11 @@ class WeatherCard extends StatelessWidget {
           spacing: 16,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Блок отображения иконки погоды
+            // Блок отображения иконки погоды.
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.asset(
-                weather.imagePath,
+                forecast.imagePath,
                 height: imageSize,
                 width: imageSize,
                 fit: BoxFit.cover,
@@ -64,24 +41,27 @@ class WeatherCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Блок вывода текстовой информации
+            // Блок вывода текстовой информации.
             Expanded(
               child: Column(
                 spacing: 4,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    weather.date,
+                    forecast.formattedDate,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   Expanded(
                     child: Text(
-                      '${weather.condition}\n'
-                      'Утром: ${weather.tempMorning}°C | Днем: ${weather.tempDay}°C | Вечером: ${weather.tempEvening}°C\n'
-                      'Ощущается как: ${weather.tempFeelsLike}°C\n'
-                      'Влажность: ${weather.humidity}% | Давление: ${weather.pressure} мм',
+                      '${forecast.conditionText}\n'
+                      'Днём: ${forecast.temperatureMax.round()}°C | '
+                      'Ночью: ${forecast.temperatureMin.round()}°C\n'
+                      'Ощущается как: '
+                      '${forecast.apparentTemperatureMax.round()}°C\n'
+                      'Влажность: ${forecast.relativeHumidity}% | '
+                      '${forecast.pressureMmHg.round()} мм',
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium,
