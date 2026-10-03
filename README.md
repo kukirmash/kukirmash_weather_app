@@ -136,11 +136,14 @@ flutter run -d chrome # Web
 
    ```bash
    dart pub global activate flutterfire_cli
-   flutterfire configure
+   export PATH="$PATH:$HOME/.pub-cache/bin"   # чтобы нашлась команда flutterfire
+   flutterfire configure --out=lib/data/firebase/firebase_options.dart
    ```
 
-   Команда создаст `lib/data/firebase/firebase_options.dart` — замените им
-   файл-заглушку из репозитория.
+   Параметр `--out` обязателен: по умолчанию CLI создаёт файл в
+   `lib/firebase_options.dart`, а приложение импортирует конфигурацию из
+   `lib/data/firebase/firebase_options.dart`. Команда перезапишет файл-заглушку
+   реальными ключами. При первом запуске CLI попросит войти в аккаунт Google.
 
 5. Запустить приложение. До настройки Firebase приложение продолжает работать,
    а экран входа сообщает о недоступности сервиса.
