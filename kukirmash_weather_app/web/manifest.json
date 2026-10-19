@@ -1,12 +1,11 @@
 {
-    "name": "kukirmash_weather_app",
-    "short_name": "kukirmash_weather_app",
+    "name": "Погода — Чебоксары",
+    "short_name": "Погода",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F3F6FB",
+    "theme_color": "#1B4B7A",
+    "description": "Минималистичный прогноз погоды для Чебоксар.",
     "prefer_related_applications": false,
     "icons": [
         {

@@ -1,92 +1,99 @@
 import 'package:flutter/material.dart';
 
-/// Модель данных DailyWeather.
-/// Добавлено поле imagePath для привязки конкретного изображения к состоянию погоды.
-class DailyWeather {
-  final String date;
-  final String condition;
-  final String imagePath;
-  final int tempMorning;
-  final int tempDay;
-  final int tempEvening;
-  final int tempFeelsLike;
-  final int humidity;
-  final int pressure;
+import '../../data/data.dart';
+import '../theme/theme.dart';
 
-  DailyWeather({
-    required this.date,
-    required this.condition,
-    required this.imagePath,
-    required this.tempMorning,
-    required this.tempDay,
-    required this.tempEvening,
-    required this.tempFeelsLike,
-    required this.humidity,
-    required this.pressure,
-  });
-}
-
-/// Пользовательский виджет WeatherCard.
+/// Карточка одного дня в списке на первом экране.
 class WeatherCard extends StatelessWidget {
-  final DailyWeather weather;
+  const WeatherCard({super.key, required this.forecast, this.onTap});
 
-  const WeatherCard({super.key, required this.weather});
+  final DailyForecast forecast;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    const imageSize = 120.0;
+    final radius = BorderRadius.circular(22);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        height: imageSize,
-        child: Row(
-          spacing: 16,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Блок отображения иконки погоды
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset(
-                weather.imagePath,
-                height: imageSize,
-                width: imageSize,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: imageSize,
-                  width: imageSize,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.cloud, size: 50),
-                ),
-              ),
-            ),
-            // Блок вывода текстовой информации
-            Expanded(
-              child: Column(
-                spacing: 4,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    weather.date,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: ThemeColors.surface,
+        borderRadius: radius,
+        border: Border.all(color: ThemeColors.line),
+      ),
+      child: Material(
+        color: ThemeColors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: ThemeColors.softBlue,
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  Expanded(
-                    child: Text(
-                      '${weather.condition}\n'
-                      'Утром: ${weather.tempMorning}°C | Днем: ${weather.tempDay}°C | Вечером: ${weather.tempEvening}°C\n'
-                      'Ощущается как: ${weather.tempFeelsLike}°C\n'
-                      'Влажность: ${weather.humidity}% | Давление: ${weather.pressure} мм',
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                  child: Hero(
+                    tag: 'weather-${forecast.id}',
+                    child: Image.asset(
+                      forecast.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.cloud_rounded,
+                        color: ThemeColors.primary,
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${forecast.relativeLabel(DateTime.now())} · '
+                        '${forecast.shortFormattedDate}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        forecast.condition.shortDescription,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${forecast.temperatureMax.round()}°',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text(
+                      '${forecast.temperatureMin.round()}°',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: ThemeColors.muted,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

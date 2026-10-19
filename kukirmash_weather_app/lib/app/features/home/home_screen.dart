@@ -1,123 +1,214 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../data/data.dart';
+import '../../../di/di.dart';
+import '../../theme/theme.dart';
 import '../../widgets/widgets.dart';
-import '../../extensions/extensions.dart';
+import 'bloc/home_bloc.dart';
 
-/// Главный экран приложения (HomeScreen).
-class HomeScreen extends StatefulWidget {
+/// Главный экран — список дней прогноза на неделю.
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<HomeBloc>()..add(const HomeLoadRequested()),
+      child: const _HomeView(),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  // Инициализация тестовых данных на 7 дней.
-  final List<DailyWeather> weekForecast = [
-    DailyWeather(
-      date: '25 Сентября, Пт',
-      condition: 'Облачно',
-      imagePath: 'assets/images/cloud-sun.png',
-      tempMorning: 12,
-      tempDay: 15,
-      tempEvening: 10,
-      tempFeelsLike: 13,
-      humidity: 60,
-      pressure: 750,
-    ),
-    DailyWeather(
-      date: '26 Сентября, Сб',
-      condition: 'Ясно',
-      imagePath: 'assets/images/sun.png',
-      tempMorning: 10,
-      tempDay: 18,
-      tempEvening: 12,
-      tempFeelsLike: 17,
-      humidity: 55,
-      pressure: 752,
-    ),
-    DailyWeather(
-      date: '27 Сентября, Вс',
-      condition: 'Кратковременный дождь',
-      imagePath: 'assets/images/rain.png',
-      tempMorning: 13,
-      tempDay: 16,
-      tempEvening: 11,
-      tempFeelsLike: 14,
-      humidity: 80,
-      pressure: 748,
-    ),
-    DailyWeather(
-      date: '28 Сентября, Пн',
-      condition: 'Пасмурно',
-      imagePath: 'assets/images/cloud-sun.png',
-      tempMorning: 9,
-      tempDay: 12,
-      tempEvening: 8,
-      tempFeelsLike: 9,
-      humidity: 75,
-      pressure: 745,
-    ),
-    DailyWeather(
-      date: '29 Сентября, Вт',
-      condition: 'Ясно',
-      imagePath: 'assets/images/sun.png',
-      tempMorning: 8,
-      tempDay: 14,
-      tempEvening: 9,
-      tempFeelsLike: 12,
-      humidity: 50,
-      pressure: 755,
-    ),
-    DailyWeather(
-      date: '30 Сентября, Ср',
-      condition: 'Сильная гроза', // Изменил описание под картинку
-      imagePath: 'assets/images/storm.png',
-      tempMorning: 11,
-      tempDay: 17,
-      tempEvening: 12,
-      tempFeelsLike: 16,
-      humidity: 85,
-      pressure: 735,
-    ),
-    DailyWeather(
-      date: '1 Октября, Чт',
-      condition: 'Дождь',
-      imagePath: 'assets/images/rain.png',
-      tempMorning: 10,
-      tempDay: 13,
-      tempEvening: 9,
-      tempFeelsLike: 10,
-      humidity: 90,
-      pressure: 740,
-    ),
-  ];
+class _HomeView extends StatelessWidget {
+  const _HomeView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Погода')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          spacing: 20,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Прогноз на неделю',
-              style: Theme.of(context).textTheme.headlineLarge,
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: ThemeColors.softBlue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.location_on_rounded,
+                      size: 20,
+                      color: ThemeColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Чебоксары',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        'Прогноз погоды',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: ThemeColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: ThemeColors.line),
+                    ),
+                    child: IconButton(
+                      tooltip: 'Обновить прогноз',
+                      onPressed: () => context.read<HomeBloc>().add(
+                        const HomeLoadRequested(),
+                      ),
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        size: 20,
+                        color: ThemeColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            ListView.separated(
-              primary: false,
-              shrinkWrap: true,
-              itemCount: weekForecast.length,
-              itemBuilder: (_, index) =>
-                  WeatherCard(weather: weekForecast[index]),
-              separatorBuilder: (_, __) => 16.ph,
+          ),
+        ),
+      ),
+      body: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
+          return switch (state) {
+            HomeInitial() || HomeLoading() => const AppLoading(),
+            HomeError(:final exception) => AppError(
+              message: exception.toString(),
+              onRetry: () =>
+                  context.read<HomeBloc>().add(const HomeLoadRequested()),
             ),
-          ],
+            HomeLoaded(:final days, :final updatedAt, :final refreshError) =>
+              _HomeContent(
+                days: days,
+                updatedAt: updatedAt,
+                refreshError: refreshError,
+              ),
+          };
+        },
+      ),
+    );
+  }
+}
+
+class _HomeContent extends StatelessWidget {
+  const _HomeContent({
+    required this.days,
+    required this.updatedAt,
+    this.refreshError,
+  });
+
+  final List<DailyForecast> days;
+  final DateTime updatedAt;
+  final Object? refreshError;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = days.first;
+    final rest = days.skip(1).toList();
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: RefreshIndicator(
+          color: ThemeColors.primary,
+          onRefresh: () => _refresh(context),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    if (refreshError != null) ...[
+                      const RefreshNotice(),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
+                      children: [
+                        Text(
+                          today.formattedWeekday.toUpperCase(),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(letterSpacing: 1.2),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Обновлено в ${_formatTime(updatedAt)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    WeatherHeroCard(
+                      forecast: today,
+                      eyebrow: today.relativeLabel(DateTime.now()),
+                      onTap: () => context.push('/details/${today.id}'),
+                    ),
+                    const SizedBox(height: 28),
+                    SectionTitle(
+                      title: 'Прогноз на неделю',
+                      trailing: '${days.length} дней',
+                    ),
+                    const SizedBox(height: 12),
+                  ]),
+                ),
+              ),
+              if (rest.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 36),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final day = rest[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == rest.length - 1 ? 0 : 12,
+                        ),
+                        child: WeatherCard(
+                          forecast: day,
+                          onTap: () => context.push('/details/${day.id}'),
+                        ),
+                      );
+                    }, childCount: rest.length),
+                  ),
+                )
+              else
+                const SliverToBoxAdapter(child: SizedBox(height: 36)),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Future<void> _refresh(BuildContext context) {
+    final completer = Completer<void>();
+    context.read<HomeBloc>().add(HomeLoadRequested(completer: completer));
+    return completer.future;
+  }
+
+  static String _formatTime(DateTime value) =>
+      '${value.hour.toString().padLeft(2, '0')}:'
+      '${value.minute.toString().padLeft(2, '0')}';
 }
